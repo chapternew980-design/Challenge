@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css'; 
 
 export default function UnsplashImageFetcher() {
-  const [images, setImages] = useState([]); // Array to hold up to 30 images
+  const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [zanra, setZanra] = useState('');
@@ -13,14 +13,15 @@ export default function UnsplashImageFetcher() {
 
   const ACCESS_KEY = '_XfKJaR2bkrcDMV1VjvRIlHX9V91NWf5O7HOMgMbeqk';
 
-  const fetchImages = async () => {
+  // Function to fetch images (Search or Random)
+  const fetchImages = async (searchTerm = '') => {
     setLoading(true);
     setError(null);
     
     try {
-      const queryParam = zanra.trim() !== '' ? zanra : 'drawing';
+      const queryParam = searchTerm || zanra.trim() || 'sketch';
       
-      // Fetches up to 30 images (Unsplash API maximum per page)
+      // Fetches 30 images from Unsplash
       const response = await fetch(
         `https://api.unsplash.com/search/photos?client_id=${ACCESS_KEY}&query=${encodeURIComponent(queryParam)}&per_page=30`
       );
@@ -38,14 +39,19 @@ export default function UnsplashImageFetcher() {
     }
   };
 
+  // 3. AUTO-LOAD 30 RANDOM IMAGES WHEN THE PAGE FIRST OPENS
+  useEffect(() => {
+    fetchImages('drawing inspiration');
+  }, []);
+
   return (
     <div className="container">
-      {/* 1. SIDEBAR TOGGLE BUTTON & DRAWER */}
+      {/* 1. SIDEBAR MENU */}
       <button 
         className="menu-btn" 
         onClick={() => setSidebarOpen(!sidebarOpen)}
       >
-        ☰ Menu
+        ☰
       </button>
 
       <div className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
@@ -56,7 +62,7 @@ export default function UnsplashImageFetcher() {
         <p>Explore ideas and reference sketches.</p>
       </div>
 
-      {/* 2. MAIN CARD UI */}
+      {/* 2. MAIN CARD */}
       <div className="card">
         <h1 className="title">Drawing Inspiration</h1>
         <p className="subtitle">Fetch reference sketches directly from Unsplash</p>
@@ -72,7 +78,7 @@ export default function UnsplashImageFetcher() {
           />
           
           <button
-            onClick={fetchImages}
+            onClick={() => fetchImages()}
             disabled={loading}
             className="fetch-btn"
           >
@@ -82,9 +88,17 @@ export default function UnsplashImageFetcher() {
 
         {error && <p className="error-msg">{error}</p>}
 
-        {/* 3. DISPLAY GRID FOR MAX IMAGES */}
+        {/* 3. IMAGE GRID & SKELETON LOADING SYSTEM */}
         <div className="image-grid">
-          {images.length > 0 ? (
+          {loading ? (
+            // SHOW 12 FAKE SKELETON CARDS WHILE LOADING (YouTube Style)
+            Array.from({ length: 12 }).map((_, index) => (
+              <div key={index} className="skeleton-card">
+                <div className="skeleton-image"></div>
+              </div>
+            ))
+          ) : images.length > 0 ? (
+            // SHOW ACTUAL IMAGES WHEN READY
             images.map((img) => (
               <div 
                 key={img.id} 
@@ -96,8 +110,9 @@ export default function UnsplashImageFetcher() {
               </div>
             ))
           ) : (
-            <div className="placeholder-text">
-              <p>Type something above and click "Get Drawings" to load results!</p>
+            // 1. CENTERED PLACEHOLDER TEXT
+            <div className="placeholder-wrapper">
+              <p className="placeholder-text">Type something above and click "Get Drawings" to load results!</p>
             </div>
           )}
         </div>
