@@ -1,135 +1,146 @@
-* {
-  box-sizing: border-box;
+/* Overall Page Background & Text Styling */
+body {
   margin: 0;
-  padding: 0;
+  background-color: #1f2937; /* Dark charcoal/slate body background */
+  color: #f3f4f6;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  background-color: #062748;
+.container {
+  min-height: 100vh;
+  padding: 30px 20px;
+  box-sizing: border-box;
+}
+
+/* 1. SIDEBAR MENU & TOGGLE BUTTON */
+.menu-btn {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  background-color: #2563eb; /* Clean blue action button */
+  color: #ffffff;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: -280px;
+  width: 250px;
+  height: 100%;
+  background-color: #111827; /* Matches the dark header color from your image */
+  padding: 24px;
+  border-right: 1px solid #374151; /* Subtle border divider */
+  box-shadow: 4px 0 15px rgba(0, 0, 0, 0.5);
+  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 20;
+}
+
+.sidebar.open {
+  left: 0;
+}
+
+.close-sidebar-btn {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 28px;
+  float: right;
+  cursor: pointer;
+}
+
+.close-sidebar-btn:hover {
   color: #ffffff;
 }
 
-/* Layout */
-.container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  padding: 20px;
-}
-
-/* Card Component */
+/* 2. MAIN CARD UI (Styled like the chat header panel) */
 .card {
-  background: radial-gradient(circle at center, rgb(144, 200, 243), rgb(1, 64, 85));
+  max-width: 1000px;
+  margin: 40px auto 0 auto;
+  background-color: #111827; /* Exact dark header background color */
+  border: 1px solid #374151;  /* Matching outline divider */
+  border-radius: 12px;
   padding: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-  width: 800px;
   text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
 }
 
 .title {
-  font-size: 24px;
+  color: #ffffff;
+  font-size: 28px;
   font-weight: 700;
-  color: #fdfdfd;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .subtitle {
-  font-size: 14px;
-  color: #666;
+  color: #9ca3af;
+  font-size: 15px;
   margin-bottom: 24px;
 }
 
-/* Button UI */
+/* 3. SEARCH INPUT & BUTTON */
+.search-controls {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 28px;
+}
+
+.input {
+  width: 60%;
+  padding: 12px 18px;
+  border-radius: 8px;
+  border: 1px solid #374151;
+  background-color: #1f2937; /* Matches the chat text input style */
+  color: #f3f4f6;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.input:focus {
+  border-color: #3b82f6;
+}
+
 .fetch-btn {
-  background-color: #000000;
+  padding: 12px 24px;
+  background-color: #0284c7; /* Bright sky-blue send button color */
   color: #ffffff;
   border: none;
+  border-radius: 8px;
   font-size: 15px;
   font-weight: 600;
-  padding: 12px 28px;
-  border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.1s ease;
-  margin-bottom: 24px;
+  transition: background-color 0.2s;
 }
 
 .fetch-btn:hover {
-  background-color: #222222;
-}
-
-.fetch-btn:active {
-  transform: scale(0.98);
+  background-color: #0369a1;
 }
 
 .fetch-btn:disabled {
-  background-color: #cccccc;
+  opacity: 0.5;
   cursor: not-allowed;
-  transform: none;
 }
 
-/* Feedback messages */
-.error-msg {
-  color: #d93838;
-  font-size: 14px;
-  margin-bottom: 16px;
+/* 4. 30-IMAGE GRID LAYOUT */
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
 }
 
-/* Image Container & Frame */
-.image-frame {
-  width: 400px;
-  height: 320px;
-  background-color: #f8f9fa;
-  border: 1px dashed #e0e0e0;
-  border-radius: 12px;
+.grid-item {
+  position: relative;
+  height: 200px;
+  border-radius: 8px;
   overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-/* Cyberpunk Input Field Styling */
-.input {
-  width: 100%;
-  background-color: #062748;
-  border: 1px solid #1f232d;
-  border-left: 3px solid #00ffcc; /* Matches the frame accent line */
-  color: #e2e8f0;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 14px;
-  padding: 14px 16px;
-  margin-bottom: 20px;
-  outline: none;
-  transition: all 0.2s ease;
-  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.5);
-}
-
-/* Subtle glow when user clicks into the input box */
-.input:focus {
-  border-color: #00ffcc;
-  box-shadow: 0 0 10px rgba(0, 255, 204, 0.2), inset 0 1px 4px rgba(0, 0, 0, 0.5);
-}
-
-/* Style the placeholder text to match the muted terminal look */
-.input::placeholder {
-  color: #eeeeee;
-  letter-spacing: 1px;
-}
-
-.display-image {
-  width: 100%;
-  height: 100%;
-  object-fit: contain; /* Keeps drawing aspect ratios intact without clipping */
-  background-color: #fafafa;
-}
-
-.placeholder-text {
-  color: #888888;
-  font-size: 14px;
-  padding: 0 20px;
-}
+  cursor:
