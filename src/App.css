@@ -1,138 +1,289 @@
-import React, { useState, useEffect } from 'react';
-import './App.css'; 
+/* Body & Base Reset */
+body {
+  margin: 0;
+  background-color: #1f2937;
+  color: #f3f4f6;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
 
-export default function UnsplashImageFetcher() {
-  const [images, setImages] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [zanra, setZanra] = useState('');
-  
-  // UI States
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [fullScreenImage, setFullScreenImage] = useState(null);
+.layout-wrapper {
+  display: flex;
+  min-height: 100vh;
+}
 
-  const ACCESS_KEY = '_XfKJaR2bkrcDMV1VjvRIlHX9V91NWf5O7HOMgMbeqk';
+/* 1. LEFT FRAME (Matches background style, clean border) */
+.left-frame {
+  width: 65px;
+  background-color: #111827;
+  border-right: 1px solid #374151;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 20px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 10;
+}
 
-  const fetchImages = async (searchTerm = '') => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const queryParam = searchTerm || zanra.trim() || 'sketch';
-      
-      const response = await fetch(
-        `https://api.unsplash.com/search/photos?client_id=${ACCESS_KEY}&query=${encodeURIComponent(queryParam)}&per_page=30`
-      );
-      
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status} ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      setImages(data.results || []);
-    } catch (err) {
-      setError(err.message || 'Failed to fetch images');
-    } finally {
-      setLoading(false);
-    }
-  };
+/* Transparent Icon inside Left Frame */
+.transparent-menu-icon {
+  background: transparent;
+  border: none;
+  color: #f3f4f6;
+  font-size: 26px;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
 
-  // Auto-load initial photos on page open
-  useEffect(() => {
-    fetchImages('drawing inspiration');
-  }, []);
+.transparent-menu-icon:hover {
+  background-color: #1f2937;
+}
 
-  return (
-    <div className="layout-wrapper">
-      {/* 1. PERMANENT LEFT FRAME */}
-      <aside className="left-frame">
-        <button 
-          className="transparent-menu-icon" 
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          title="Toggle Navigation"
-        >
-          ☰
-        </button>
-      </aside>
+/* 2. SIDEBAR DRAWER & LINK BUTTONS */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: -280px;
+  width: 260px;
+  height: 100%;
+  background-color: #111827;
+  padding: 24px 20px;
+  border-right: 1px solid #374151;
+  box-shadow: 4px 0 25px rgba(0, 0, 0, 0.6);
+  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 20;
+}
 
-      {/* 2. SIDEBAR NAVIGATION DRAWER */}
-      <div className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
-        <button className="close-sidebar-btn" onClick={() => setSidebarOpen(false)}>
-          ×
-        </button>
-        <h2 className="sidebar-title">Navigation</h2>
-        
-        {/* Ready-to-Link Buttons */}
-        <nav className="sidebar-nav">
-          <button className="nav-btn active">🏠 Home / Search</button>
-          <button className="nav-btn">⭐ Favorites</button>
-          <button className="nav-btn">📂 Categories</button>
-          <button className="nav-btn">ℹ️ About Us</button>
-        </nav>
-      </div>
+.sidebar.open {
+  left: 65px; /* Slides out right next to the left frame */
+}
 
-      {/* 3. MAIN CONTENT AREA */}
-      <main className="main-content">
-        <div className="card">
-          <h1 className="title">Drawing Inspiration</h1>
-          <p className="subtitle">Fetch reference sketches directly from Unsplash</p>
+.close-sidebar-btn {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 28px;
+  float: right;
+  cursor: pointer;
+}
 
-          <div className="search-controls">
-            <input 
-              className="input" 
-              onChange={(e) => setZanra(e.target.value)} 
-              onKeyDown={(e) => e.key === 'Enter' && fetchImages()}
-              value={zanra} 
-              type="text" 
-              placeholder="What do you want to draw?"
-            />
-            
-            <button
-              onClick={() => fetchImages()}
-              disabled={loading}
-              className="fetch-btn"
-            >
-              {loading ? 'Fetching...' : 'Get Drawings'}
-            </button>
-          </div>
+.close-sidebar-btn:hover {
+  color: #ffffff;
+}
 
-          {error && <p className="error-msg">{error}</p>}
+.sidebar-title {
+  color: #ffffff;
+  font-size: 20px;
+  margin-top: 10px;
+  margin-bottom: 24px;
+}
 
-          {/* 4. IMAGE GRID & SKELETON LOADING */}
-          <div className="image-grid">
-            {loading ? (
-              Array.from({ length: 12 }).map((_, index) => (
-                <div key={index} className="skeleton-card">
-                  <div className="skeleton-image"></div>
-                </div>
-              ))
-            ) : images.length > 0 ? (
-              images.map((img) => (
-                <div 
-                  key={img.id} 
-                  className="grid-item"
-                  onClick={() => setFullScreenImage(img.urls.regular)}
-                >
-                  <img src={img.urls.small} alt={img.alt_description || "Reference photo"} />
-                  <div className="hover-overlay">Click for Full View 🔍</div>
-                </div>
-              ))
-            ) : (
-              <div className="placeholder-wrapper">
-                <p className="placeholder-text">Type something above and click "Get Drawings" to load results!</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </main>
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
 
-      {/* 5. OVERRIDING FULL-SCREEN COVER MODAL */}
-      {fullScreenImage && (
-        <div className="total-fullscreen-cover" onClick={() => setFullScreenImage(null)}>
-          <span className="close-fullscreen-btn">&times;</span>
-          <img src={fullScreenImage} alt="Full screen preview" className="full-screen-img" />
-        </div>
-      )}
-    </div>
+.nav-btn {
+  width: 100%;
+  padding: 12px 16px;
+  background-color: #1f2937;
+  color: #e5e7eb;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nav-btn:hover {
+  background-color: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+.nav-btn.active {
+  background-color: #0284c7;
+  color: #ffffff;
+  border-color: #0284c7;
+}
+
+/* 3. MAIN CONTENT OFFSET */
+.main-content {
+  flex: 1;
+  margin-left: 65px; /* Leaves space for the left frame */
+  padding: 30px 20px;
+  box-sizing: border-box;
+}
+
+.card {
+  max-width: 1000px;
+  margin: 0 auto;
+  background-color: #111827;
+  border: 1px solid #374151;
+  border-radius: 12px;
+  padding: 32px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.title {
+  color: #ffffff;
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  color: #9ca3af;
+  font-size: 15px;
+  margin-bottom: 24px;
+}
+
+/* Search Box */
+.search-controls {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 28px;
+}
+
+.input {
+  width: 60%;
+  padding: 12px 18px;
+  border-radius: 8px;
+  border: 1px solid #374151;
+  background-color: #1f2937;
+  color: #f3f4f6;
+  font-size: 15px;
+  outline: none;
+}
+
+.fetch-btn {
+  padding: 12px 24px;
+  background-color: #0284c7;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Grid & Skeleton Loading */
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.grid-item {
+  position: relative;
+  height: 200px;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 1px solid #374151;
+}
+
+.grid-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hover-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.75);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.grid-item:hover .hover-overlay {
+  opacity: 1;
+}
+
+.placeholder-wrapper {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 0;
+}
+
+.placeholder-text {
+  color: #9ca3af;
+  text-align: center;
+}
+
+/* Skeleton Shimmer Box */
+.skeleton-card {
+  height: 200px;
+  border-radius: 8px;
+  background-color: #1f2937;
+  border: 1px solid #374151;
+  overflow: hidden;
+}
+
+.skeleton-image {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    #1f2937 0%,
+    #374151 50%,
+    #1f2937 100%
   );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* 4. TOTAL OVERRIDING FULL-SCREEN IMAGE COVER */
+.total-fullscreen-cover {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 99999; /* Highest possible layer to cover whole screen */
+  cursor: pointer;
+}
+
+.full-screen-img {
+  max-width: 95vw;
+  max-height: 95vh;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.9);
+}
+
+.close-fullscreen-btn {
+  position: absolute;
+  top: 24px;
+  right: 36px;
+  color: #ffffff;
+  font-size: 45px;
+  font-weight: 300;
+  cursor: pointer;
 }
