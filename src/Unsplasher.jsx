@@ -12,10 +12,8 @@ export default function App() {
   const [fullScreenImage, setFullScreenImage] = useState(null);
   const [currentPage, setCurrentPage] = useState('home');
 
-  // AI Chat State
-  const [messages, setMessages] = useState([
-    { sender: 'ai', text: 'Hello! I am your AI assistant. How can I help you with your art, ideas, or questions today?' }
-  ]);
+  // AI Chat State (Initialized empty so only real responses appear)
+  const [messages, setMessages] = useState([]);
   const [inputPrompt, setInputPrompt] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
 
@@ -204,6 +202,11 @@ export default function App() {
             
             <div className="chat-container">
               <div className="chat-box">
+                {messages.length === 0 && (
+                  <div className="placeholder-text" style={{ margin: 'auto' }}>
+                    Type a prompt below to start talking to your local AI model!
+                  </div>
+                )}
                 {messages.map((msg, index) => (
                   <div key={index} className={`message ${msg.sender}`}>
                     {msg.text}
