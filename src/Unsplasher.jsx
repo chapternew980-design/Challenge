@@ -1,303 +1,200 @@
-/* Base Reset & Background */
-body {
-  margin: 0;
-  padding: 0;
-  background-color: #0b1320;
-  color: #ffffff;
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  overflow-x: hidden;
-}
+import React, { useState, useEffect } from 'react';
+import './App.css'; 
 
-.layout-wrapper {
-  display: flex;
-  min-height: 100vh;
-}
+export default function UnsplashImageFetcher() {
+  const [images, setImages] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [zanra, setZanra] = useState('');
+  
+  // UI States
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [fullScreenImage, setFullScreenImage] = useState(null);
 
-/* 1. NARROW LEFT FRAME */
-.left-frame {
-  width: 50px;
-  background-color: #0f172a;
-  border-right: 1px solid #1e293b;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding-top: 16px;
-  position: fixed;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  z-index: 10;
-}
+  // 📍 FIXED: Changed 'Home' to lowercase 'home' to match button checks
+  const [currentPage, setCurrentPage] = useState('home');
 
-.transparent-menu-icon {
-  background: transparent;
-  border: none;
-  color: #f3f4f6;
-  font-size: 24px;
-  cursor: pointer;
-  padding: 6px;
-  border-radius: 6px;
-  transition: background-color 0.2s ease;
-}
+  const ACCESS_KEY = '_XfKJaR2bkrcDMV1VjvRIlHX9V91NWf5O7HOMgMbeqk';
 
-.transparent-menu-icon:hover {
-  background-color: #1e293b;
-}
+  const fetchImages = async (searchTerm = '') => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const queryParam = searchTerm || zanra.trim() || 'sketch';
+      
+      const response = await fetch(
+        `https://api.unsplash.com/search/photos?client_id=${ACCESS_KEY}&query=${encodeURIComponent(queryParam)}&per_page=30`
+      );
+      
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      setImages(data.results || []);
+    } catch (err) {
+      setError(err.message || 'Failed to fetch images');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-/* 2. SIDEBAR DRAWER */
-.sidebar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 260px;
-  height: 100%;
-  background-color: #0f172a;
-  padding: 24px 20px;
-  border-right: 1px solid #1e293b;
-  box-shadow: 4px 0 25px rgba(0, 0, 0, 0.6);
-  transform: translateX(-100%);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 30;
-  box-sizing: border-box;
-}
+  // Auto-load initial photos on page open
+  useEffect(() => {
+    fetchImages('drawing inspiration');
+  }, []);
 
-.sidebar.open {
-  transform: translateX(50px);
-}
+  return (
+    <div className="layout-wrapper">
+      {/* 1. PERMANENT LEFT FRAME */}
+      <aside className="left-frame">
+        <button 
+          className="transparent-menu-icon" 
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          title="Toggle Navigation"
+        >
+          ☰
+        </button>
+      </aside>
 
-.close-sidebar-btn {
-  background: none;
-  border: none;
-  color: #9ca3af;
-  font-size: 28px;
-  float: right;
-  cursor: pointer;
-}
+      {/* 2. SIDEBAR NAVIGATION DRAWER */}
+      <div className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
+        <button className="close-sidebar-btn" onClick={() => setSidebarOpen(false)}>×</button>
+        <h2 className="sidebar-title">Navigation</h2>
+        
+        <nav className="sidebar-nav">
+          <button 
+            className={`nav-btn ${currentPage === 'home' ? 'active' : ''}`}
+            onClick={() => { setCurrentPage('home'); setSidebarOpen(false); }}
+          >
+            🏠 Home
+          </button>
+          
+          <button 
+            className={`nav-btn ${currentPage === 'changes' ? 'active' : ''}`}
+            onClick={() => { setCurrentPage('changes'); setSidebarOpen(false); }}
+          >
+            🛠 Changes
+          </button>
+          
+          <button 
+            className={`nav-btn ${currentPage === 'others' ? 'active' : ''}`}
+            onClick={() => { setCurrentPage('others'); setSidebarOpen(false); }}
+          >
+            🔗 Others
+          </button>
+          
+          <button 
+            className={`nav-btn ${currentPage === 'about' ? 'active' : ''}`}
+            onClick={() => { setCurrentPage('about'); setSidebarOpen(false); }}
+          >
+            ℹ️ About Us
+          </button>
+        </nav>
+      </div>
 
-.close-sidebar-btn:hover {
-  color: #ffffff;
-}
+      {/* 3. MAIN CONTENT AREA */}
+      <main className="main-content">
+        {/* 🏠 HOME PAGE VIEW */}
+        {currentPage === 'home' && (
+          <div className="card">
+            <h1 className="title">Drawing Inspiration</h1>
+            <p className="subtitle">Fetch reference sketches directly from Unsplash</p>
 
-.sidebar-title {
-  color: #ffffff;
-  font-size: 20px;
-  margin-top: 10px;
-  margin-bottom: 24px;
-}
+            <div className="search-controls">
+              <input 
+                className="input" 
+                onChange={(e) => setZanra(e.target.value)} 
+                onKeyDown={(e) => e.key === 'Enter' && fetchImages()}
+                value={zanra} 
+                type="text" 
+                placeholder="🔍Search"
+              />
+              
+              <button
+                onClick={() => fetchImages()}
+                disabled={loading}
+                className="fetch-btn"
+              >
+                {loading ? 'Fetching...' : 'Get Drawings'}
+              </button>
+            </div>
 
-.sidebar-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
+            {error && <p className="error-msg">{error}</p>}
 
-.nav-btn {
-  width: 100%;
-  padding: 12px 16px;
-  background-color: #1e293b;
-  color: #e5e7eb;
-  border: 1px solid #334155;
-  border-radius: 8px;
-  font-size: 15px;
-  text-align: left;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
+            {/* IMAGE GRID & SKELETON LOADING */}
+            <div className="image-grid">
+              {loading ? (
+                Array.from({ length: 12 }).map((_, index) => (
+                  <div key={index} className="skeleton-card">
+                    <div className="skeleton-image"></div>
+                  </div>
+                ))
+              ) : images.length > 0 ? (
+                images.map((img) => (
+                  <div 
+                    key={img.id} 
+                    className="grid-item"
+                    onClick={() => setFullScreenImage(img.urls.regular)}
+                  >
+                    <img src={img.urls.small} alt={img.alt_description || "Reference photo"} />
+                    <div className="hover-overlay">Click for Full View 🔍</div>
+                  </div>
+                ))
+              ) : (
+                <div className="placeholder-wrapper">
+                  <p className="placeholder-text">Type something above and click "Get Drawings" to load results!</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
-.nav-btn:hover {
-  background-color: #0084d4;
-  color: #ffffff;
-  border-color: #0084d4;
-}
+        {/* 🛠 CHANGES PAGE VIEW */}
+        {currentPage === 'changes' && (
+          <div className="card">
+            <h1 className="title">🛠 Changes & Updates</h1>
+            <p className="subtitle">Here is what we recently built in this app:</p>
+            <div style={{ textAlign: 'left', maxWidth: '500px', margin: '20px auto', lineHeight: '1.8' }}>
+              <p>✔️ Pictures amout improved to 30 per page</p>
+              <p>✔️ Added menu and other pages.</p>
+              <p>✔️ Changes in styling.</p>                
+              <p>✔️ Added full-screen image preview overlay.</p>
+              <p>✔️ Added sidebar menu navigation with instant page switching.</p>
+              <p>✔️ Connected Unsplash API for custom image searches.</p>
+              <p>🙌 And many other changes you can discover.</p>
+            </div>
+          </div>
+        )}
 
-.nav-btn.active {
-  background-color: #0084d4;
-  color: #ffffff;
-  border-color: #0084d4;
-}
+        {/* 🔗 OTHERS PAGE VIEW */}
+        {currentPage === 'others' && (
+          <div className="card">
+            <h1 className="title">🔗 Other Resources</h1>
+            <p className="subtitle">Extra links and tools for artists will be added here soon.</p>
+          </div>
+        )}
 
-/* 3. MAIN CONTENT AREA */
-.main-content {
-  flex: 1;
-  margin-left: 50px;
-  padding: 40px;
-  box-sizing: border-box;
-  text-align: center;
-}
+        {/* ℹ️ ABOUT PAGE VIEW */}
+        {currentPage === 'about' && (
+          <div className="card">
+            <h1 className="title">ℹ️ About Us</h1>
+            <p className="subtitle">Drawing Inspiration App</p>
+            <p style={{ maxWidth: '600px', margin: '0 auto', color: '#9ca3af' }}>
+              This web app was designed to give artists quick and easy access to high-quality reference sketches directly from Unsplash.
+            </p>
+          </div>
+        )}
+      </main>
 
-.title {
-  color: #ffffff;
-  font-size: 32px;
-  font-weight: 700;
-  margin-bottom: 8px;
-}
-
-.subtitle {
-  color: #9ca3af;
-  font-size: 15px;
-  margin-bottom: 28px;
-}
-
-.card {
-  max-width: 1000px;
-  margin: 0 auto;
-}
-
-/* Search Controls */
-.search-controls {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  margin-bottom: 32px;
-}
-
-.input {
-  width: 50%;
-  max-width: 500px;
-  padding: 12px 18px;
-  border-radius: 8px;
-  border: 1px solid #243248;
-  background-color: #182232;
-  color: #f3f4f6;
-  font-size: 15px;
-  outline: none;
-}
-
-.input:focus {
-  border-color: #0084d4;
-}
-
-.fetch-btn {
-  padding: 12px 24px;
-  background-color: #0084d4;
-  color: #ffffff;
-  border: none;
-  border-radius: 8px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.fetch-btn:hover {
-  background-color: #0095f2;
-}
-
-.error-msg {
-  color: #ef4444;
-  margin-bottom: 16px;
-}
-
-/* Image Grid & Skeleton Loading */
-.image-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 18px;
-  margin-top: 20px;
-}
-
-.grid-item {
-  position: relative;
-  height: 200px;
-  border-radius: 8px;
-  overflow: hidden;
-  cursor: pointer;
-  border: 1px solid #243248;
-  background-color: #182232;
-}
-
-.grid-item img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.hover-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.85);
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.grid-item:hover .hover-overlay {
-  opacity: 1;
-}
-
-.placeholder-wrapper {
-  grid-column: 1 / -1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 40px 0;
-}
-
-.placeholder-text {
-  color: #9ca3af;
-  text-align: center;
-}
-
-/* Skeleton Shimmer Box */
-.skeleton-card {
-  height: 200px;
-  border-radius: 8px;
-  background-color: #182232;
-  border: 1px solid #243248;
-  overflow: hidden;
-}
-
-.skeleton-image {
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    #182232 0%,
-    #243248 50%,
-    #182232 100%
+      {/* 4. OVERRIDING FULL-SCREEN COVER MODAL */}
+      {fullScreenImage && (
+        <div className="total-fullscreen-cover" onClick={() => setFullScreenImage(null)}>
+          <span className="close-fullscreen-btn">&times;</span>
+          <img src={fullScreenImage} alt="Full screen preview" className="full-screen-img" />
+        </div>
+      )}
+    </div>
   );
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-}
-
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
-/* 4. TOTAL OVERRIDING FULL-SCREEN IMAGE COVER */
-.total-fullscreen-cover {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(0, 0, 0, 0.95);
-  backdrop-filter: blur(8px);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 99999;
-  cursor: pointer;
-}
-
-.full-screen-img {
-  max-width: 95vw;
-  max-height: 95vh;
-  object-fit: contain;
-  border-radius: 8px;
-  box-shadow: 0 0 50px rgba(0, 0, 0, 0.9);
-}
-
-.close-fullscreen-btn {
-  position: absolute;
-  top: 24px;
-  right: 36px;
-  color: #ffffff;
-  font-size: 45px;
-  font-weight: 300;
-  cursor: pointer;
 }
