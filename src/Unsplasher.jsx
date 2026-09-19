@@ -12,9 +12,9 @@ export default function App() {
   const [fullScreenImage, setFullScreenImage] = useState(null);
   const [currentPage, setCurrentPage] = useState('home');
 
-  // Local AI Chat State
+  // AI Chat State
   const [messages, setMessages] = useState([
-    { sender: 'ai', text: 'Hello! I am your local AI assistant. How can I help you with your drawings or notes today?' }
+    { sender: 'ai', text: 'Hello! I am your AI assistant. How can I help you with your art, ideas, or questions today?' }
   ]);
   const [inputPrompt, setInputPrompt] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
@@ -45,12 +45,10 @@ export default function App() {
     }
   };
 
-  // Auto-load initial photos on page open
   useEffect(() => {
     fetchImages('drawing inspiration');
   }, []);
 
-  // Handler to talk to your Local AI API (e.g., Ollama)
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!inputPrompt.trim() || aiLoading) return;
@@ -65,7 +63,7 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'llama3', // Adjust to match your local model
+          model: 'llama3',
           prompt: inputPrompt,
           stream: false
         })
@@ -79,7 +77,7 @@ export default function App() {
       console.error('Error fetching local AI:', err);
       setMessages((prev) => [
         ...prev,
-        { sender: 'ai', text: '⚠️ Unable to connect to your local AI API. Please make sure your local server (e.g. Ollama or LM Studio) is running.' }
+        { sender: 'ai', text: '⚠️ Unable to connect to your local AI endpoint. Make sure your local server is running.' }
       ]);
     } finally {
       setAiLoading(false);
@@ -116,7 +114,7 @@ export default function App() {
             className={`nav-btn ${currentPage === 'ai' ? 'active' : ''}`}
             onClick={() => { setCurrentPage('ai'); setSidebarOpen(false); }}
           >
-            🤖 Local AI Chat
+            🤖 AI Assistant
           </button>
           
           <button 
@@ -144,7 +142,7 @@ export default function App() {
 
       {/* 3. MAIN CONTENT AREA */}
       <main className="main-content">
-        {/* 🏠 HOME PAGE VIEW */}
+        {/* 🏠 HOME PAGE */}
         {currentPage === 'home' && (
           <div className="card">
             <h1 className="title">Drawing Inspiration</h1>
@@ -171,7 +169,6 @@ export default function App() {
 
             {error && <p className="error-msg">{error}</p>}
 
-            {/* IMAGE GRID & SKELETON LOADING */}
             <div className="image-grid">
               {loading ? (
                 Array.from({ length: 12 }).map((_, index) => (
@@ -199,11 +196,11 @@ export default function App() {
           </div>
         )}
 
-        {/* 🤖 LOCAL AI CHAT PAGE VIEW */}
+        {/* 🤖 AI ASSISTANT PAGE */}
         {currentPage === 'ai' && (
           <div className="card">
-            <h1 className="title">Local AI Assistant</h1>
-            <p className="subtitle">Chat with your offline AI model</p>
+            <h1 className="title">AI Assistant</h1>
+            <p className="subtitle">Chat with your AI prompt assistant</p>
             
             <div className="chat-container">
               <div className="chat-box">
@@ -219,7 +216,7 @@ export default function App() {
                 <input
                   type="text"
                   className="chat-input"
-                  placeholder="Ask your local AI..."
+                  placeholder="Ask the AI something..."
                   value={inputPrompt}
                   onChange={(e) => setInputPrompt(e.target.value)}
                 />
@@ -231,25 +228,24 @@ export default function App() {
           </div>
         )}
 
-        {/* 🛠 CHANGES PAGE VIEW */}
+        {/* 🛠 CHANGES PAGE */}
         {currentPage === 'changes' && (
           <div className="card">
             <h1 className="title">🛠 Changes & Updates</h1>
             <p className="subtitle">Here is what we recently built in this app:</p>
             <div style={{ textAlign: 'left', maxWidth: '500px', margin: '20px auto', lineHeight: '1.8' }}>
-              <p>✔️ Added Local AI Chat integration.</p>
+              <p>✔️ Added new AI Assistant page.</p>
               <p>✔️ Pictures amount improved to 30 per page.</p>
-              <p>✔️ Added menu and other pages.</p>
-              <p>✔️ Changes in styling.</p>                
+              <p>✔️ Added menu and navigation pages.</p>
+              <p>✔️ Updated dark navigation theme.</p>                
               <p>✔️ Added full-screen image preview overlay.</p>
-              <p>✔️ Added sidebar menu navigation with instant page switching.</p>
+              <p>✔️ Added sidebar menu navigation drawer.</p>
               <p>✔️ Connected Unsplash API for custom image searches.</p>
-              <p>🙌 And many other changes you can discover.</p>
             </div>
           </div>
         )}
 
-        {/* 🔗 OTHERS PAGE VIEW */}
+        {/* 🔗 OTHERS PAGE */}
         {currentPage === 'others' && (
           <div className="card">
             <h1 className="title">🔗 Other Resources</h1>
@@ -257,7 +253,7 @@ export default function App() {
           </div>
         )}
 
-        {/* ℹ️ ABOUT PAGE VIEW */}
+        {/* ℹ️ ABOUT PAGE */}
         {currentPage === 'about' && (
           <div className="card">
             <h1 className="title">ℹ️ About Us</h1>
