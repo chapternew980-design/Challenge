@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './App.css'; 
 
-export default function UnsplashImageFetcher() {
+export default function App() {
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -10,9 +10,14 @@ export default function UnsplashImageFetcher() {
   // UI States
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [fullScreenImage, setFullScreenImage] = useState(null);
-
-  // 📍 FIXED: Changed 'Home' to lowercase 'home' to match button checks
   const [currentPage, setCurrentPage] = useState('home');
+
+  // Local AI Chat State
+  const [messages, setMessages] = useState([
+    { sender: 'ai', text: 'Hello! I am your local AI assistant. How can I help you with your drawings or notes today?' }
+  ]);
+  const [inputPrompt, setInputPrompt] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
 
   const ACCESS_KEY = '_XfKJaR2bkrcDMV1VjvRIlHX9V91NWf5O7HOMgMbeqk';
 
@@ -45,6 +50,42 @@ export default function UnsplashImageFetcher() {
     fetchImages('drawing inspiration');
   }, []);
 
+  // Handler to talk to your Local AI API (e.g., Ollama)
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!inputPrompt.trim() || aiLoading) return;
+
+    const userMessage = { sender: 'user', text: inputPrompt };
+    setMessages((prev) => [...prev, userMessage]);
+    setInputPrompt('');
+    setAiLoading(true);
+
+    try {
+      const response = await fetch('http://localhost:11434/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'llama3', // Adjust to match your local model
+          prompt: inputPrompt,
+          stream: false
+        })
+      });
+
+      const data = await response.json();
+      const aiReply = data.response || 'No response received from local AI.';
+
+      setMessages((prev) => [...prev, { sender: 'ai', text: aiReply }]);
+    } catch (err) {
+      console.error('Error fetching local AI:', err);
+      setMessages((prev) => [
+        ...prev,
+        { sender: 'ai', text: '⚠️ Unable to connect to your local AI API. Please make sure your local server (e.g. Ollama or LM Studio) is running.' }
+      ]);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   return (
     <div className="layout-wrapper">
       {/* 1. PERMANENT LEFT FRAME */}
@@ -69,6 +110,13 @@ export default function UnsplashImageFetcher() {
             onClick={() => { setCurrentPage('home'); setSidebarOpen(false); }}
           >
             🏠 Home
+          </button>
+
+          <button 
+            className={`nav-btn ${currentPage === 'ai' ? 'active' : ''}`}
+            onClick={() => { setCurrentPage('ai'); setSidebarOpen(false); }}
+          >
+            🤖 Local AI Chat
           </button>
           
           <button 
@@ -109,7 +157,7 @@ export default function UnsplashImageFetcher() {
                 onKeyDown={(e) => e.key === 'Enter' && fetchImages()}
                 value={zanra} 
                 type="text" 
-                placeholder="🔍Search"
+                placeholder="🔍 Search sketches..."
               />
               
               <button
@@ -151,13 +199,46 @@ export default function UnsplashImageFetcher() {
           </div>
         )}
 
+        {/* 🤖 LOCAL AI CHAT PAGE VIEW */}
+        {currentPage === 'ai' && (
+          <div className="card">
+            <h1 className="title">Local AI Assistant</h1>
+            <p className="subtitle">Chat with your offline AI model</p>
+            
+            <div className="chat-container">
+              <div className="chat-box">
+                {messages.map((msg, index) => (
+                  <div key={index} className={`message ${msg.sender}`}>
+                    {msg.text}
+                  </div>
+                ))}
+                {aiLoading && <div className="message ai">Thinking...</div>}
+              </div>
+
+              <form onSubmit={handleSendMessage} className="chat-input-form">
+                <input
+                  type="text"
+                  className="chat-input"
+                  placeholder="Ask your local AI..."
+                  value={inputPrompt}
+                  onChange={(e) => setInputPrompt(e.target.value)}
+                />
+                <button type="submit" className="send-btn" disabled={aiLoading}>
+                  Send
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
         {/* 🛠 CHANGES PAGE VIEW */}
         {currentPage === 'changes' && (
           <div className="card">
             <h1 className="title">🛠 Changes & Updates</h1>
             <p className="subtitle">Here is what we recently built in this app:</p>
             <div style={{ textAlign: 'left', maxWidth: '500px', margin: '20px auto', lineHeight: '1.8' }}>
-              <p>✔️ Pictures amout improved to 30 per page</p>
+              <p>✔️ Added Local AI Chat integration.</p>
+              <p>✔️ Pictures amount improved to 30 per page.</p>
               <p>✔️ Added menu and other pages.</p>
               <p>✔️ Changes in styling.</p>                
               <p>✔️ Added full-screen image preview overlay.</p>
