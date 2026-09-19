@@ -1,133 +1,303 @@
-import { useState } from 'react'
-import './App.css'
-
-function App() {
-  // Page Navigation State ('notes' or 'chat')
-  const [activeTab, setActiveTab] = useState('notes')
-
-  // Sample Notes State
-  const [notes, setNotes] = useState([
-    { id: 1, title: 'Shopping List', content: 'Milk, Eggs, Bread', date: 'Today' },
-    { id: 2, title: 'Project Ideas', content: 'Build a Samsung Notes clone using React', date: 'Yesterday' }
-  ])
-
-  // Local AI Chat State
-  const [messages, setMessages] = useState([
-    { sender: 'ai', text: 'Hello! I am your local AI assistant. How can I help you today?' }
-  ])
-  const [inputPrompt, setInputPrompt] = useState('')
-  const [loading, setLoading] = useState(false)
-
-  // Function to Send Message to Local AI API
-  const handleSendMessage = async (e) => {
-    e.preventDefault()
-    if (!inputPrompt.trim() || loading) return
-
-    const userMessage = { sender: 'user', text: inputPrompt }
-    setMessages((prev) => [...prev, userMessage])
-    setInputPrompt('')
-    setLoading(true)
-
-    try {
-      // Default endpoint for Ollama API running locally
-      const response = await fetch('http://localhost:11434/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'llama3', // Replace with your local model name (e.g., 'mistral', 'phi3')
-          prompt: inputPrompt,
-          stream: false
-        })
-      })
-
-      const data = await response.json()
-      const aiReply = data.response || 'No response received from local AI.'
-
-      setMessages((prev) => [...prev, { sender: 'ai', text: aiReply }])
-    } catch (error) {
-      console.error('Error fetching local AI:', error)
-      setMessages((prev) => [
-        ...prev,
-        { sender: 'ai', text: '⚠️ Unable to connect to your local AI API. Make sure your local AI server is running.' }
-      ])
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  return (
-    <div className="app-container">
-      {/* Header */}
-      <header className="header">
-        <h1 className="logo">Samsung Workspace</h1>
-        <div className="header-icons">
-          <button className="icon-btn">🔍 Search</button>
-          <button className="icon-btn">⋮ Options</button>
-        </div>
-      </header>
-
-      {/* Navigation Tabs */}
-      <div className="nav-tabs">
-        <button
-          className={`tab-btn ${activeTab === 'notes' ? 'active' : ''}`}
-          onClick={() => setActiveTab('notes')}
-        >
-          📝 Notes
-        </button>
-        <button
-          className={`tab-btn ${activeTab === 'chat' ? 'active' : ''}`}
-          onClick={() => setActiveTab('chat')}
-        >
-          🤖 Local AI Chat
-        </button>
-      </div>
-
-      {/* Notes View */}
-      {activeTab === 'notes' && (
-        <main className="main-content">
-          <div className="notes-grid">
-            {notes.map((note) => (
-              <div key={note.id} className="note-card">
-                <h3 className="note-title">{note.title}</h3>
-                <p className="note-body">{note.content}</p>
-                <span className="note-date">{note.date}</span>
-              </div>
-            ))}
-          </div>
-          <button className="fab">+</button>
-        </main>
-      )}
-
-      {/* AI Chat View */}
-      {activeTab === 'chat' && (
-        <main className="main-content">
-          <div className="chat-container">
-            <div className="chat-box">
-              {messages.map((msg, index) => (
-                <div key={index} className={`message ${msg.sender}`}>
-                  {msg.text}
-                </div>
-              ))}
-              {loading && <div className="message ai">Thinking...</div>}
-            </div>
-
-            <form onSubmit={handleSendMessage} className="chat-input-form">
-              <input
-                type="text"
-                className="chat-input"
-                placeholder="Ask your local AI..."
-                value={inputPrompt}
-                onChange={(e) => setInputPrompt(e.target.value)}
-              />
-              <button type="submit" className="send-btn" disabled={loading}>
-                Send
-              </button>
-            </form>
-          </div>
-        </main>
-      )}
-    </div>
-  )
+/* Base Reset & Background */
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #0b1320;
+  color: #ffffff;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
 }
 
-export default App
+.layout-wrapper {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* 1. NARROW LEFT FRAME */
+.left-frame {
+  width: 50px;
+  background-color: #0f172a;
+  border-right: 1px solid #1e293b;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 16px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 10;
+}
+
+.transparent-menu-icon {
+  background: transparent;
+  border: none;
+  color: #f3f4f6;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+
+.transparent-menu-icon:hover {
+  background-color: #1e293b;
+}
+
+/* 2. SIDEBAR DRAWER */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 260px;
+  height: 100%;
+  background-color: #0f172a;
+  padding: 24px 20px;
+  border-right: 1px solid #1e293b;
+  box-shadow: 4px 0 25px rgba(0, 0, 0, 0.6);
+  transform: translateX(-100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 30;
+  box-sizing: border-box;
+}
+
+.sidebar.open {
+  transform: translateX(50px);
+}
+
+.close-sidebar-btn {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 28px;
+  float: right;
+  cursor: pointer;
+}
+
+.close-sidebar-btn:hover {
+  color: #ffffff;
+}
+
+.sidebar-title {
+  color: #ffffff;
+  font-size: 20px;
+  margin-top: 10px;
+  margin-bottom: 24px;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nav-btn {
+  width: 100%;
+  padding: 12px 16px;
+  background-color: #1e293b;
+  color: #e5e7eb;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nav-btn:hover {
+  background-color: #0084d4;
+  color: #ffffff;
+  border-color: #0084d4;
+}
+
+.nav-btn.active {
+  background-color: #0084d4;
+  color: #ffffff;
+  border-color: #0084d4;
+}
+
+/* 3. MAIN CONTENT AREA */
+.main-content {
+  flex: 1;
+  margin-left: 50px;
+  padding: 40px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.title {
+  color: #ffffff;
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  color: #9ca3af;
+  font-size: 15px;
+  margin-bottom: 28px;
+}
+
+.card {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+/* Search Controls */
+.search-controls {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 32px;
+}
+
+.input {
+  width: 50%;
+  max-width: 500px;
+  padding: 12px 18px;
+  border-radius: 8px;
+  border: 1px solid #243248;
+  background-color: #182232;
+  color: #f3f4f6;
+  font-size: 15px;
+  outline: none;
+}
+
+.input:focus {
+  border-color: #0084d4;
+}
+
+.fetch-btn {
+  padding: 12px 24px;
+  background-color: #0084d4;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.fetch-btn:hover {
+  background-color: #0095f2;
+}
+
+.error-msg {
+  color: #ef4444;
+  margin-bottom: 16px;
+}
+
+/* Image Grid & Skeleton Loading */
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 18px;
+  margin-top: 20px;
+}
+
+.grid-item {
+  position: relative;
+  height: 200px;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 1px solid #243248;
+  background-color: #182232;
+}
+
+.grid-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hover-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.85);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.grid-item:hover .hover-overlay {
+  opacity: 1;
+}
+
+.placeholder-wrapper {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 0;
+}
+
+.placeholder-text {
+  color: #9ca3af;
+  text-align: center;
+}
+
+/* Skeleton Shimmer Box */
+.skeleton-card {
+  height: 200px;
+  border-radius: 8px;
+  background-color: #182232;
+  border: 1px solid #243248;
+  overflow: hidden;
+}
+
+.skeleton-image {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    #182232 0%,
+    #243248 50%,
+    #182232 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* 4. TOTAL OVERRIDING FULL-SCREEN IMAGE COVER */
+.total-fullscreen-cover {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 99999;
+  cursor: pointer;
+}
+
+.full-screen-img {
+  max-width: 95vw;
+  max-height: 95vh;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.9);
+}
+
+.close-fullscreen-btn {
+  position: absolute;
+  top: 24px;
+  right: 36px;
+  color: #ffffff;
+  font-size: 45px;
+  font-weight: 300;
+  cursor: pointer;
+}
