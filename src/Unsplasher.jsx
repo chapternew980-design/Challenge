@@ -1,200 +1,133 @@
-import React, { useState, useEffect } from 'react';
-import './App.css'; 
+import { useState } from 'react'
+import './App.css'
 
-export default function UnsplashImageFetcher() {
-  const [images, setImages] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [zanra, setZanra] = useState('');
-  
-  // UI States
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [fullScreenImage, setFullScreenImage] = useState(null);
+function App() {
+  // Page Navigation State ('notes' or 'chat')
+  const [activeTab, setActiveTab] = useState('notes')
 
-  // 📍 FIXED: Changed 'Home' to lowercase 'home' to match button checks
-  const [currentPage, setCurrentPage] = useState('home');
+  // Sample Notes State
+  const [notes, setNotes] = useState([
+    { id: 1, title: 'Shopping List', content: 'Milk, Eggs, Bread', date: 'Today' },
+    { id: 2, title: 'Project Ideas', content: 'Build a Samsung Notes clone using React', date: 'Yesterday' }
+  ])
 
-  const ACCESS_KEY = '_XfKJaR2bkrcDMV1VjvRIlHX9V91NWf5O7HOMgMbeqk';
+  // Local AI Chat State
+  const [messages, setMessages] = useState([
+    { sender: 'ai', text: 'Hello! I am your local AI assistant. How can I help you today?' }
+  ])
+  const [inputPrompt, setInputPrompt] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const fetchImages = async (searchTerm = '') => {
-    setLoading(true);
-    setError(null);
-    
+  // Function to Send Message to Local AI API
+  const handleSendMessage = async (e) => {
+    e.preventDefault()
+    if (!inputPrompt.trim() || loading) return
+
+    const userMessage = { sender: 'user', text: inputPrompt }
+    setMessages((prev) => [...prev, userMessage])
+    setInputPrompt('')
+    setLoading(true)
+
     try {
-      const queryParam = searchTerm || zanra.trim() || 'sketch';
-      
-      const response = await fetch(
-        `https://api.unsplash.com/search/photos?client_id=${ACCESS_KEY}&query=${encodeURIComponent(queryParam)}&per_page=30`
-      );
-      
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status} ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      setImages(data.results || []);
-    } catch (err) {
-      setError(err.message || 'Failed to fetch images');
-    } finally {
-      setLoading(false);
-    }
-  };
+      // Default endpoint for Ollama API running locally
+      const response = await fetch('http://localhost:11434/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'llama3', // Replace with your local model name (e.g., 'mistral', 'phi3')
+          prompt: inputPrompt,
+          stream: false
+        })
+      })
 
-  // Auto-load initial photos on page open
-  useEffect(() => {
-    fetchImages('drawing inspiration');
-  }, []);
+      const data = await response.json()
+      const aiReply = data.response || 'No response received from local AI.'
+
+      setMessages((prev) => [...prev, { sender: 'ai', text: aiReply }])
+    } catch (error) {
+      console.error('Error fetching local AI:', error)
+      setMessages((prev) => [
+        ...prev,
+        { sender: 'ai', text: '⚠️ Unable to connect to your local AI API. Make sure your local AI server is running.' }
+      ])
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
-    <div className="layout-wrapper">
-      {/* 1. PERMANENT LEFT FRAME */}
-      <aside className="left-frame">
-        <button 
-          className="transparent-menu-icon" 
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          title="Toggle Navigation"
-        >
-          ☰
-        </button>
-      </aside>
+    <div className="app-container">
+      {/* Header */}
+      <header className="header">
+        <h1 className="logo">Samsung Workspace</h1>
+        <div className="header-icons">
+          <button className="icon-btn">🔍 Search</button>
+          <button className="icon-btn">⋮ Options</button>
+        </div>
+      </header>
 
-      {/* 2. SIDEBAR NAVIGATION DRAWER */}
-      <div className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
-        <button className="close-sidebar-btn" onClick={() => setSidebarOpen(false)}>×</button>
-        <h2 className="sidebar-title">Navigation</h2>
-        
-        <nav className="sidebar-nav">
-          <button 
-            className={`nav-btn ${currentPage === 'home' ? 'active' : ''}`}
-            onClick={() => { setCurrentPage('home'); setSidebarOpen(false); }}
-          >
-            🏠 Home
-          </button>
-          
-          <button 
-            className={`nav-btn ${currentPage === 'changes' ? 'active' : ''}`}
-            onClick={() => { setCurrentPage('changes'); setSidebarOpen(false); }}
-          >
-            🛠 Changes
-          </button>
-          
-          <button 
-            className={`nav-btn ${currentPage === 'others' ? 'active' : ''}`}
-            onClick={() => { setCurrentPage('others'); setSidebarOpen(false); }}
-          >
-            🔗 Others
-          </button>
-          
-          <button 
-            className={`nav-btn ${currentPage === 'about' ? 'active' : ''}`}
-            onClick={() => { setCurrentPage('about'); setSidebarOpen(false); }}
-          >
-            ℹ️ About Us
-          </button>
-        </nav>
+      {/* Navigation Tabs */}
+      <div className="nav-tabs">
+        <button
+          className={`tab-btn ${activeTab === 'notes' ? 'active' : ''}`}
+          onClick={() => setActiveTab('notes')}
+        >
+          📝 Notes
+        </button>
+        <button
+          className={`tab-btn ${activeTab === 'chat' ? 'active' : ''}`}
+          onClick={() => setActiveTab('chat')}
+        >
+          🤖 Local AI Chat
+        </button>
       </div>
 
-      {/* 3. MAIN CONTENT AREA */}
-      <main className="main-content">
-        {/* 🏠 HOME PAGE VIEW */}
-        {currentPage === 'home' && (
-          <div className="card">
-            <h1 className="title">Drawing Inspiration</h1>
-            <p className="subtitle">Fetch reference sketches directly from Unsplash</p>
+      {/* Notes View */}
+      {activeTab === 'notes' && (
+        <main className="main-content">
+          <div className="notes-grid">
+            {notes.map((note) => (
+              <div key={note.id} className="note-card">
+                <h3 className="note-title">{note.title}</h3>
+                <p className="note-body">{note.content}</p>
+                <span className="note-date">{note.date}</span>
+              </div>
+            ))}
+          </div>
+          <button className="fab">+</button>
+        </main>
+      )}
 
-            <div className="search-controls">
-              <input 
-                className="input" 
-                onChange={(e) => setZanra(e.target.value)} 
-                onKeyDown={(e) => e.key === 'Enter' && fetchImages()}
-                value={zanra} 
-                type="text" 
-                placeholder="🔍Search"
-              />
-              
-              <button
-                onClick={() => fetchImages()}
-                disabled={loading}
-                className="fetch-btn"
-              >
-                {loading ? 'Fetching...' : 'Get Drawings'}
-              </button>
-            </div>
-
-            {error && <p className="error-msg">{error}</p>}
-
-            {/* IMAGE GRID & SKELETON LOADING */}
-            <div className="image-grid">
-              {loading ? (
-                Array.from({ length: 12 }).map((_, index) => (
-                  <div key={index} className="skeleton-card">
-                    <div className="skeleton-image"></div>
-                  </div>
-                ))
-              ) : images.length > 0 ? (
-                images.map((img) => (
-                  <div 
-                    key={img.id} 
-                    className="grid-item"
-                    onClick={() => setFullScreenImage(img.urls.regular)}
-                  >
-                    <img src={img.urls.small} alt={img.alt_description || "Reference photo"} />
-                    <div className="hover-overlay">Click for Full View 🔍</div>
-                  </div>
-                ))
-              ) : (
-                <div className="placeholder-wrapper">
-                  <p className="placeholder-text">Type something above and click "Get Drawings" to load results!</p>
+      {/* AI Chat View */}
+      {activeTab === 'chat' && (
+        <main className="main-content">
+          <div className="chat-container">
+            <div className="chat-box">
+              {messages.map((msg, index) => (
+                <div key={index} className={`message ${msg.sender}`}>
+                  {msg.text}
                 </div>
-              )}
+              ))}
+              {loading && <div className="message ai">Thinking...</div>}
             </div>
-          </div>
-        )}
 
-        {/* 🛠 CHANGES PAGE VIEW */}
-        {currentPage === 'changes' && (
-          <div className="card">
-            <h1 className="title">🛠 Changes & Updates</h1>
-            <p className="subtitle">Here is what we recently built in this app:</p>
-            <div style={{ textAlign: 'left', maxWidth: '500px', margin: '20px auto', lineHeight: '1.8' }}>
-              <p>✔️ Pictures amout improved to 30 per page</p>
-              <p>✔️ Added menu and other pages.</p>
-              <p>✔️ Changes in styling.</p>                
-              <p>✔️ Added full-screen image preview overlay.</p>
-              <p>✔️ Added sidebar menu navigation with instant page switching.</p>
-              <p>✔️ Connected Unsplash API for custom image searches.</p>
-              <p>🙌 And many other changes you can discover.</p>
-            </div>
+            <form onSubmit={handleSendMessage} className="chat-input-form">
+              <input
+                type="text"
+                className="chat-input"
+                placeholder="Ask your local AI..."
+                value={inputPrompt}
+                onChange={(e) => setInputPrompt(e.target.value)}
+              />
+              <button type="submit" className="send-btn" disabled={loading}>
+                Send
+              </button>
+            </form>
           </div>
-        )}
-
-        {/* 🔗 OTHERS PAGE VIEW */}
-        {currentPage === 'others' && (
-          <div className="card">
-            <h1 className="title">🔗 Other Resources</h1>
-            <p className="subtitle">Extra links and tools for artists will be added here soon.</p>
-          </div>
-        )}
-
-        {/* ℹ️ ABOUT PAGE VIEW */}
-        {currentPage === 'about' && (
-          <div className="card">
-            <h1 className="title">ℹ️ About Us</h1>
-            <p className="subtitle">Drawing Inspiration App</p>
-            <p style={{ maxWidth: '600px', margin: '0 auto', color: '#9ca3af' }}>
-              This web app was designed to give artists quick and easy access to high-quality reference sketches directly from Unsplash.
-            </p>
-          </div>
-        )}
-      </main>
-
-      {/* 4. OVERRIDING FULL-SCREEN COVER MODAL */}
-      {fullScreenImage && (
-        <div className="total-fullscreen-cover" onClick={() => setFullScreenImage(null)}>
-          <span className="close-fullscreen-btn">&times;</span>
-          <img src={fullScreenImage} alt="Full screen preview" className="full-screen-img" />
-        </div>
+        </main>
       )}
     </div>
-  );
+  )
 }
+
+export default App
