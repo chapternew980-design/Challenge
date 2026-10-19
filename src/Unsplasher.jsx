@@ -12,10 +12,27 @@ export default function App() {
   const [fullScreenImage, setFullScreenImage] = useState(null);
   const [currentPage, setCurrentPage] = useState('home');
 
-  // AI Chat State (Initialized empty so only real responses appear)
+  // AI Chat State
   const [messages, setMessages] = useState([]);
   const [inputPrompt, setInputPrompt] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
+
+  // Education Archive State (Loaded from localStorage if available)
+  const [subjects, setSubjects] = useState(() => {
+    const saved = localStorage.getItem('education_archive');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [newSubjectName, setNewSubjectName] = useState('');
+  const [selectedSubjectId, setSelectedSubjectId] = useState(null);
+  const [examTitle, setExamTitle] = useState('');
+  const [examScore, setExamScore] = useState('');
+  const [examDate, setExamDate] = useState('');
+
+  // Save education data to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('education_archive', JSON.stringify(subjects));
+  }, [subjects]);
 
   const ACCESS_KEY = '_XfKJaR2bkrcDMV1VjvRIlHX9V91NWf5O7HOMgMbeqk';
 
@@ -82,9 +99,61 @@ export default function App() {
     }
   };
 
+  // Education Archive Helper Functions
+  const handleAddSubject = (e) => {
+    e.preventDefault();
+    if (!newSubjectName.trim()) return;
+
+    const newSubject = {
+      id: Date.now(),
+      name: newSubjectName.trim(),
+      exams: []
+    };
+
+    setSubjects([...subjects, newSubject]);
+    setNewSubjectName('');
+  };
+
+  const handleAddExam = (e, subjectId) => {
+    e.preventDefault();
+    if (!examTitle.trim() || !examScore.trim()) return;
+
+    const newExam = {
+      id: Date.now(),
+      title: examTitle.trim(),
+      score: examScore.trim(),
+      date: examDate || 'No date'
+    };
+
+    setSubjects(subjects.map(sub => {
+      if (sub.id === subjectId) {
+        return { ...sub, exams: [...sub.exams, newExam] };
+      }
+      return sub;
+    }));
+
+    setExamTitle('');
+    setExamScore('');
+    setExamDate('');
+    setSelectedSubjectId(null);
+  };
+
+  const handleDeleteSubject = (subjectId) => {
+    setSubjects(subjects.filter(sub => sub.id !== subjectId));
+  };
+
+  const handleDeleteExam = (subjectId, examId) => {
+    setSubjects(subjects.map(sub => {
+      if (sub.id === subjectId) {
+        return { ...sub, exams: sub.exams.filter(exam => exam.id !== examId) };
+      }
+      return sub;
+    }));
+  };
+
   return (
     <div className="layout-wrapper">
-      {/* 1. PERMANENT LEFT FRAME */}
+      {/* 1. PERMANENT NARROW LEFT FRAME */}
       <aside className="left-frame">
         <button 
           className="transparent-menu-icon" 
@@ -113,6 +182,13 @@ export default function App() {
             onClick={() => { setCurrentPage('ai'); setSidebarOpen(false); }}
           >
             🤖 AI Assistant
+          </button>
+
+          <button 
+            className={`nav-btn ${currentPage === 'education' ? 'active' : ''}`}
+            onClick={() => { setCurrentPage('education'); setSidebarOpen(false); }}
+          >
+            📚 Education Archive
           </button>
           
           <button 
@@ -196,11 +272,11 @@ export default function App() {
 
         {/* 🤖 AI ASSISTANT PAGE */}
         {currentPage === 'ai' && (
-          <div className="card">
+          <div className="card" style={{ maxWidth: '800px', margin: '0 auto' }}>
             <h1 className="title">AI Assistant</h1>
             <p className="subtitle">Chat with your AI prompt assistant</p>
             
-            <div className="chat-container">
+            <div className="chat-container" style={{ maxWidth: '100%' }}>
               <div className="chat-box">
                 {messages.length === 0 && (
                   <div className="placeholder-text" style={{ margin: 'auto' }}>
@@ -231,50 +307,101 @@ export default function App() {
           </div>
         )}
 
-        {/* 🛠 CHANGES PAGE */}
-        {currentPage === 'changes' && (
-          <div className="card">
-            <h1 className="title">🛠 Changes & Updates</h1>
-            <p className="subtitle">Here is what we recently built in this app:</p>
-            <div style={{ textAlign: 'left', maxWidth: '500px', margin: '20px auto', lineHeight: '1.8' }}>
-              <p>✔️ Added new AI Assistant page.</p>
-              <p>✔️ Pictures amount improved to 30 per page.</p>
-              <p>✔️ Added menu and navigation pages.</p>
-              <p>✔️ Updated dark navigation theme.</p>                
-              <p>✔️ Added full-screen image preview overlay.</p>
-              <p>✔️ Added sidebar menu navigation drawer.</p>
-              <p>✔️ Connected Unsplash API for custom image searches.</p>
-            </div>
-          </div>
-        )}
+        {/* 📚 EDUCATION ARCHIVE PAGE */}
+        {currentPage === 'education' && (
+          <div className="card" style={{ maxWidth: '800px', margin: '0 auto' }}>
+            <h1 className="title">📚 Education Archive</h1>
+            <p className="subtitle">Track your subjects, exam details, and scores</p>
 
-        {/* 🔗 OTHERS PAGE */}
-        {currentPage === 'others' && (
-          <div className="card">
-            <h1 className="title">🔗 Other Resources</h1>
-            <p className="subtitle">Extra links and tools for artists will be added here soon.</p>
-          </div>
-        )}
+            {/* Add Subject Form */}
+            <form onSubmit={handleAddSubject} className="search-controls" style={{ marginBottom: '30px' }}>
+              <input
+                type="text"
+                className="input"
+                placeholder="Enter subject name (e.g., Mathematics)..."
+                value={newSubjectName}
+                onChange={(e) => setNewSubjectName(e.target.value)}
+                style={{ width: '100%', maxWidth: 'none' }}
+              />
+              <button type="submit" className="fetch-btn">Add Subject</button>
+            </form>
 
-        {/* ℹ️ ABOUT PAGE */}
-        {currentPage === 'about' && (
-          <div className="card">
-            <h1 className="title">ℹ️ About Us</h1>
-            <p className="subtitle">Drawing Inspiration App</p>
-            <p style={{ maxWidth: '600px', margin: '0 auto', color: '#9ca3af' }}>
-              This web app was designed to give artists quick and easy access to high-quality reference sketches directly from Unsplash.
-            </p>
-          </div>
-        )}
-      </main>
+            {/* Subjects List */}
+            <div style={{ textAlign: 'left' }}>
+              {subjects.length === 0 ? (
+                <p className="placeholder-text" style={{ textAlign: 'center', padding: '20px' }}>
+                  No subjects added yet. Add a subject above to start archiving your exams!
+                </p>
+              ) : (
+                subjects.map((sub) => (
+                  <div key={sub.id} className="edu-subject-card">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                      <h2 style={{ color: '#ffffff', margin: 0, fontSize: '1.2rem' }}>📖 {sub.name}</h2>
+                      <div>
+                        <button 
+                          type="button"
+                          onClick={() => setSelectedSubjectId(selectedSubjectId === sub.id ? null : sub.id)}
+                          className="edu-action-btn primary"
+                        >
+                          {selectedSubjectId === sub.id ? 'Cancel' : '+ Add Exam'}
+                        </button>
+                        <button 
+                          type="button"
+                          onClick={() => handleDeleteSubject(sub.id)}
+                          className="edu-action-btn danger"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
 
-      {/* 4. OVERRIDING FULL-SCREEN COVER MODAL */}
-      {fullScreenImage && (
-        <div className="total-fullscreen-cover" onClick={() => setFullScreenImage(null)}>
-          <span className="close-fullscreen-btn">&times;</span>
-          <img src={fullScreenImage} alt="Full screen preview" className="full-screen-img" />
-        </div>
-      )}
-    </div>
-  );
-}
+                    {/* Add Exam Form */}
+                    {selectedSubjectId === sub.id && (
+                      <form onSubmit={(e) => handleAddExam(e, sub.id)} className="edu-exam-form">
+                        <input
+                          type="text"
+                          className="input"
+                          placeholder="Exam details / title (e.g., Midterm Exam)..."
+                          value={examTitle}
+                          onChange={(e) => setExamTitle(e.target.value)}
+                          style={{ width: '100%', maxWidth: 'none' }}
+                        />
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                          <input
+                            type="text"
+                            className="input"
+                            placeholder="Score (e.g., 95/100 or A)..."
+                            value={examScore}
+                            onChange={(e) => setExamScore(e.target.value)}
+                            style={{ width: '100%', maxWidth: 'none' }}
+                          />
+                          <input
+                            type="date"
+                            className="input"
+                            value={examDate}
+                            onChange={(e) => setExamDate(e.target.value)}
+                            style={{ width: '100%', maxWidth: 'none' }}
+                          />
+                        </div>
+                        <button type="submit" className="fetch-btn" style={{ alignSelf: 'flex-start' }}>Save Exam</button>
+                      </form>
+                    )}
+
+                    {/* Exams List under Subject */}
+                    {sub.exams.length === 0 ? (
+                      <p style={{ color: '#9ca3af', fontStyle: 'italic', fontSize: '0.9rem', margin: 0 }}>No exams recorded for this subject yet.</p>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {sub.exams.map((exam) => (
+                          <div key={exam.id} className="edu-exam-item">
+                            <div>
+                              <strong style={{ color: '#f3f4f6' }}>{exam.title}</strong>
+                              <span style={{ color: '#9ca3af', marginLeft: '12px', fontSize: '0.85rem' }}>📅 {exam.date}</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                              <span className="edu-score-badge">{exam.score}</span>
+                              <button 
+                                type="button"
+                                onClick={() => handleDeleteExam(sub.id, exam.id)}
+                                className="edu-delete-exam-btn"
+                                title="Delete Exam"
