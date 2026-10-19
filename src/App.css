@@ -368,7 +368,90 @@ body {
 }
 
 /* ==========================================
-   7. FULL-SCREEN MODAL OVERLAY
+   7. EDUCATION ARCHIVE STYLES
+   ========================================== */
+.edu-subject-card {
+  background: #182232;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  border: 1px solid #243248;
+}
+
+.edu-action-btn {
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: background-color 0.2s ease;
+}
+
+.edu-action-btn.primary {
+  background-color: #0084d4;
+  color: #ffffff;
+  margin-right: 8px;
+}
+
+.edu-action-btn.primary:hover {
+  background-color: #0095f2;
+}
+
+.edu-action-btn.danger {
+  background-color: #ef4444;
+  color: #ffffff;
+}
+
+.edu-action-btn.danger:hover {
+  background-color: #dc2626;
+}
+
+.edu-exam-form {
+  background: #0f172a;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid #1e293b;
+}
+
+.edu-exam-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #0f172a;
+  padding: 10px 15px;
+  border-radius: 6px;
+  border-left: 4px solid #0084d4;
+}
+
+.edu-score-badge {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.edu-delete-exam-btn {
+  background: transparent;
+  color: #ef4444;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: color 0.2s;
+}
+
+.edu-delete-exam-btn:hover {
+  color: #dc2626;
+}
+
+/* ==========================================
+   8. FULL-SCREEN MODAL OVERLAY
    ========================================== */
 .total-fullscreen-cover {
   position: fixed;
