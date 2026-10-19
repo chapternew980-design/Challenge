@@ -12,32 +12,10 @@ export default function App() {
   const [fullScreenImage, setFullScreenImage] = useState(null);
   const [currentPage, setCurrentPage] = useState('home');
 
-  // AI Chat State
+  // AI Chat State (Initialized empty so only real responses appear)
   const [messages, setMessages] = useState([]);
   const [inputPrompt, setInputPrompt] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
-
-  // 🎓 Education Records Archive State
-  const [records, setRecords] = useState([
-    {
-      id: 1,
-      subject: 'Mathematics',
-      title: 'Midterm Exam - Calculus & Algebra',
-      date: '2026-05-15',
-      score: '95/100',
-      details: 'Reviewed integration by parts and matrix multiplication. Excellent work on polynomial expressions.',
-      imageUrl: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&w=600&q=80'
-    }
-  ]);
-  const [filterSubject, setFilterSubject] = useState('All');
-  const [newRecord, setNewRecord] = useState({
-    subject: 'Mathematics',
-    title: '',
-    date: '',
-    score: '',
-    details: '',
-    imageUrl: ''
-  });
 
   const ACCESS_KEY = '_XfKJaR2bkrcDMV1VjvRIlHX9V91NWf5O7HOMgMbeqk';
 
@@ -104,46 +82,6 @@ export default function App() {
     }
   };
 
-  // Image Upload Handler for Education Records
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setNewRecord((prev) => ({ ...prev, imageUrl: reader.result }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // Add New Education Record
-  const handleAddRecord = (e) => {
-    e.preventDefault();
-    if (!newRecord.title || !newRecord.imageUrl) {
-      alert('Please provide a title and select/upload an image!');
-      return;
-    }
-
-    const createdRecord = {
-      ...newRecord,
-      id: Date.now()
-    };
-
-    setRecords((prev) => [createdRecord, ...prev]);
-    setNewRecord({
-      subject: 'Mathematics',
-      title: '',
-      date: '',
-      score: '',
-      details: '',
-      imageUrl: ''
-    });
-  };
-
-  const filteredRecords = filterSubject === 'All' 
-    ? records 
-    : records.filter((rec) => rec.subject === filterSubject);
-
   return (
     <div className="layout-wrapper">
       {/* 1. PERMANENT LEFT FRAME */}
@@ -168,13 +106,6 @@ export default function App() {
             onClick={() => { setCurrentPage('home'); setSidebarOpen(false); }}
           >
             🏠 Home
-          </button>
-
-          <button 
-            className={`nav-btn ${currentPage === 'education' ? 'active' : ''}`}
-            onClick={() => { setCurrentPage('education'); setSidebarOpen(false); }}
-          >
-            🎓 Exam Records Archive
           </button>
 
           <button 
@@ -263,56 +194,87 @@ export default function App() {
           </div>
         )}
 
-        {/* 🎓 EDUCATION RECORDS ARCHIVE PAGE */}
-        {currentPage === 'education' && (
+        {/* 🤖 AI ASSISTANT PAGE */}
+        {currentPage === 'ai' && (
           <div className="card">
-            <h1 className="title">🎓 Education Records Archive</h1>
-            <p className="subtitle">Upload, categorize, and archive your exam results and notes</p>
-
-            {/* Add New Record Form */}
-            <form onSubmit={handleAddRecord} style={{ maxWidth: '600px', margin: '20px auto', textAlign: 'left', background: '#1e293b', padding: '20px', borderRadius: '12px' }}>
-              <h3 style={{ marginTop: 0, color: '#f3f4f6' }}>➕ Add New Exam Record</h3>
-              
-              <div style={{ marginBottom: '12px' }}>
-                <label style={{ display: 'block', color: '#9ca3af', fontSize: '14px', marginBottom: '4px' }}>Subject Category</label>
-                <select 
-                  className="input"
-                  value={newRecord.subject} 
-                  onChange={(e) => setNewRecord({ ...newRecord, subject: e.target.value })}
-                  style={{ width: '100%' }}
-                >
-                  <option value="Mathematics">Mathematics</option>
-                  <option value="Physics">Physics</option>
-                  <option value="Chemistry">Chemistry</option>
-                  <option value="Computer Science">Computer Science</option>
-                  <option value="English">English</option>
-                  <option value="Other">Other</option>
-                </select>
+            <h1 className="title">AI Assistant</h1>
+            <p className="subtitle">Chat with your AI prompt assistant</p>
+            
+            <div className="chat-container">
+              <div className="chat-box">
+                {messages.length === 0 && (
+                  <div className="placeholder-text" style={{ margin: 'auto' }}>
+                    Type a prompt below to start talking to your local AI model!
+                  </div>
+                )}
+                {messages.map((msg, index) => (
+                  <div key={index} className={`message ${msg.sender}`}>
+                    {msg.text}
+                  </div>
+                ))}
+                {aiLoading && <div className="message ai">Thinking...</div>}
               </div>
 
-              <div style={{ marginBottom: '12px' }}>
-                <label style={{ display: 'block', color: '#9ca3af', fontSize: '14px', marginBottom: '4px' }}>Exam Title</label>
-                <input 
-                  type="text" 
-                  className="input" 
-                  placeholder="e.g. Physics Final Exam Chapter 4"
-                  value={newRecord.title}
-                  onChange={(e) => setNewRecord({ ...newRecord, title: e.target.value })}
-                  style={{ width: '100%' }}
-                  required
+              <form onSubmit={handleSendMessage} className="chat-input-form">
+                <input
+                  type="text"
+                  className="chat-input"
+                  placeholder="Ask the AI something..."
+                  value={inputPrompt}
+                  onChange={(e) => setInputPrompt(e.target.value)}
                 />
-              </div>
+                <button type="submit" className="send-btn" disabled={aiLoading}>
+                  Send
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
 
-              <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', color: '#9ca3af', fontSize: '14px', marginBottom: '4px' }}>Date</label>
-                  <input 
-                    type="date" 
-                    className="input" 
-                    value={newRecord.date}
-                    onChange={(e) => setNewRecord({ ...newRecord, date: e.target.value })}
-                    style={{ width: '100%' }}
-                  />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', color: '#9ca3af', fontSize: '14px', marginBottom: '4px' }}>Score / Grade</
+        {/* 🛠 CHANGES PAGE */}
+        {currentPage === 'changes' && (
+          <div className="card">
+            <h1 className="title">🛠 Changes & Updates</h1>
+            <p className="subtitle">Here is what we recently built in this app:</p>
+            <div style={{ textAlign: 'left', maxWidth: '500px', margin: '20px auto', lineHeight: '1.8' }}>
+              <p>✔️ Added new AI Assistant page.</p>
+              <p>✔️ Pictures amount improved to 30 per page.</p>
+              <p>✔️ Added menu and navigation pages.</p>
+              <p>✔️ Updated dark navigation theme.</p>                
+              <p>✔️ Added full-screen image preview overlay.</p>
+              <p>✔️ Added sidebar menu navigation drawer.</p>
+              <p>✔️ Connected Unsplash API for custom image searches.</p>
+            </div>
+          </div>
+        )}
+
+        {/* 🔗 OTHERS PAGE */}
+        {currentPage === 'others' && (
+          <div className="card">
+            <h1 className="title">🔗 Other Resources</h1>
+            <p className="subtitle">Extra links and tools for artists will be added here soon.</p>
+          </div>
+        )}
+
+        {/* ℹ️ ABOUT PAGE */}
+        {currentPage === 'about' && (
+          <div className="card">
+            <h1 className="title">ℹ️ About Us</h1>
+            <p className="subtitle">Drawing Inspiration App</p>
+            <p style={{ maxWidth: '600px', margin: '0 auto', color: '#9ca3af' }}>
+              This web app was designed to give artists quick and easy access to high-quality reference sketches directly from Unsplash.
+            </p>
+          </div>
+        )}
+      </main>
+
+      {/* 4. OVERRIDING FULL-SCREEN COVER MODAL */}
+      {fullScreenImage && (
+        <div className="total-fullscreen-cover" onClick={() => setFullScreenImage(null)}>
+          <span className="close-fullscreen-btn">&times;</span>
+          <img src={fullScreenImage} alt="Full screen preview" className="full-screen-img" />
+        </div>
+      )}
+    </div>
+  );
+}
